@@ -1936,36 +1936,27 @@ def predict_food():
     })
 
 # ── STARTUP ───────────────────────────────────────────────────────────────────
+def _background_train():
+    import threading
+    if os.path.exists('extra_data'):
+        saved = [os.path.join('extra_data', f) for f in os.listdir('extra_data') if f.endswith(('.xlsx', '.xls'))]
+        EXTRA_FILES.extend(saved)
+    if os.path.exists(EXCEL_FILE):
+        print(f"Training on {EXCEL_FILE}...")
+        train_pipeline(EXCEL_FILE, EXTRA_FILES if EXTRA_FILES else None)
+        print("Training complete.")
+    else:
+        print(f"{EXCEL_FILE} not found.")
+
+import threading
+_train_thread = threading.Thread(target=_background_train, daemon=True)
+_train_thread.start()
+
 if __name__ == '__main__':
     import sys
     import io
     if sys.stdout.encoding != 'utf-8':
         sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
-    
-    print("=" * 70)
-    print("  PlantProtein AI — Production Edition v4.0")
-    print("=" * 70)
-    print("  Fast & Practical Optimization")
-    print("=" * 70)
-    print(f"  Base file:  {EXCEL_FILE}")
-    print(f"  Practical constraints:")
-    print(f"    - Max single ingredient: {MAX_SINGLE_INGREDIENT*100}%")
-    print(f"    - Max low-protein ingredient: {MAX_LOW_PROTEIN_RATIO*100}%")
-    print(f"    - Protein target: {TARGET_PROTEIN}g/100g")
-    print("=" * 70)
-    
-    if os.path.exists('extra_data'):
-        saved = [os.path.join('extra_data', f) for f in os.listdir('extra_data') if f.endswith(('.xlsx', '.xls'))]
-        EXTRA_FILES.extend(saved)
-    
-    if os.path.exists(EXCEL_FILE):
-        print(f"\nTraining on {EXCEL_FILE}...")
-        train_pipeline(EXCEL_FILE, EXTRA_FILES if EXTRA_FILES else None)
-    else:
-        print(f"\n{EXCEL_FILE} not found. Place it here then restart.\n")
-    
-    print(f"\nServer ready for fast practical optimization")
-    print(f"   Open browser: http://localhost:5000\n")
-    
+
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
