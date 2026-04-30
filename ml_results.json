@@ -1,0 +1,678 @@
+{
+  "model_metrics": {
+    "r2": 0.824,
+    "rmse": 1.613,
+    "cv_r2_mean": 0.922,
+    "cv_r2_std": 0.052,
+    "train_size": 340,
+    "test_size": 86,
+    "total_foods": 426,
+    "feature_importance": {
+      "Histidine": 0.0097,
+      "Isoleucine": 0.0047,
+      "Leucine": 0.0202,
+      "Lysine": 0.0089,
+      "Methionine": 0.0041,
+      "Phenylalanine": 0.0034,
+      "Threonine": 0.0015,
+      "Tryptophan": 0.0101,
+      "Valine": 0.0057,
+      "total_amino_acids": 0.0159,
+      "protein_content": 0.0024,
+      "aa_balance_cv": 0.0891,
+      "egg_cosine": 0.0303,
+      "p_Histidine": 0.0692,
+      "p_Isoleucine": 0.0055,
+      "p_Leucine": 0.0397,
+      "p_Lysine": 0.0161,
+      "p_Methionine": 0.0522,
+      "p_Phenylalanine": 0.0314,
+      "p_Threonine": 0.0094,
+      "p_Tryptophan": 0.1514,
+      "p_Valine": 0.0123,
+      "who_Histidine": 0.06,
+      "who_Isoleucine": 0.0056,
+      "who_Leucine": 0.0353,
+      "who_Lysine": 0.0169,
+      "who_Methionine": 0.0813,
+      "who_Phenylalanine": 0.0252,
+      "who_Threonine": 0.0103,
+      "who_Tryptophan": 0.1609,
+      "who_Valine": 0.0113
+    }
+  },
+  "amino_acids": [
+    "Histidine",
+    "Isoleucine",
+    "Leucine",
+    "Lysine",
+    "Methionine",
+    "Phenylalanine",
+    "Threonine",
+    "Tryptophan",
+    "Valine"
+  ],
+  "who_reference": {
+    "Histidine": 15,
+    "Isoleucine": 30,
+    "Leucine": 59,
+    "Lysine": 45,
+    "Methionine": 16,
+    "Phenylalanine": 38,
+    "Threonine": 23,
+    "Tryptophan": 7,
+    "Valine": 39
+  },
+  "egg_reference": {
+    "Histidine": 2.2,
+    "Isoleucine": 5.4,
+    "Leucine": 8.6,
+    "Lysine": 7.0,
+    "Methionine": 3.4,
+    "Phenylalanine": 5.7,
+    "Threonine": 4.7,
+    "Tryptophan": 1.6,
+    "Valine": 6.6
+  },
+  "top_foods": [
+    {
+      "food": "Seeds Sesame Seeds Whole Dried",
+      "food_group": "Nuts and Seeds",
+      "predicted_score": 66.21,
+      "pdcaas_score": 66.81,
+      "protein_content": 42.82,
+      "lim_aa": "Lysine",
+      "lim_aa_score": 29.53,
+      "egg_cosine": 0.97
+    },
+    {
+      "food": "Oranges, raw, Florida",
+      "food_group": "Fruits",
+      "predicted_score": 65.95,
+      "pdcaas_score": 66.47,
+      "protein_content": 151.79,
+      "lim_aa": "Leucine",
+      "lim_aa_score": 27.12,
+      "egg_cosine": 0.95
+    },
+    {
+      "food": "Soybeans, green, raw",
+      "food_group": "Vegetables",
+      "predicted_score": 65.89,
+      "pdcaas_score": 66.67,
+      "protein_content": 192.13,
+      "lim_aa": "Leucine",
+      "lim_aa_score": 20.16,
+      "egg_cosine": 0.93
+    },
+    {
+      "food": "Oranges, raw, all commercial varieties",
+      "food_group": "Fruits",
+      "predicted_score": 65.84,
+      "pdcaas_score": 66.25,
+      "protein_content": 151.6,
+      "lim_aa": "Leucine",
+      "lim_aa_score": 27.36,
+      "egg_cosine": 0.95
+    },
+    {
+      "food": "Oranges, raw, California, valencias",
+      "food_group": "Fruits",
+      "predicted_score": 65.79,
+      "pdcaas_score": 66.15,
+      "protein_content": 152.65,
+      "lim_aa": "Leucine",
+      "lim_aa_score": 27.76,
+      "egg_cosine": 0.95
+    },
+    {
+      "food": "Lotus root, raw",
+      "food_group": "Vegetables",
+      "predicted_score": 65.5,
+      "pdcaas_score": 65.76,
+      "protein_content": 108.17,
+      "lim_aa": "Leucine",
+      "lim_aa_score": 41.58,
+      "egg_cosine": 0.97
+    },
+    {
+      "food": "Lotus Root",
+      "food_group": "Vegetables",
+      "predicted_score": 65.46,
+      "pdcaas_score": 65.8,
+      "protein_content": 2.81,
+      "lim_aa": "Leucine",
+      "lim_aa_score": 41.62,
+      "egg_cosine": 0.97
+    },
+    {
+      "food": "Cabbage, raw",
+      "food_group": "Vegetables",
+      "predicted_score": 65.35,
+      "pdcaas_score": 65.44,
+      "protein_content": 131.34,
+      "lim_aa": "Leucine",
+      "lim_aa_score": 41.34,
+      "egg_cosine": 0.98
+    },
+    {
+      "food": "Amaranth",
+      "food_group": "Cereals",
+      "predicted_score": 65.33,
+      "pdcaas_score": 66.33,
+      "protein_content": 204.37,
+      "lim_aa": "Leucine",
+      "lim_aa_score": 44.78,
+      "egg_cosine": 0.99
+    },
+    {
+      "food": "Plums, raw",
+      "food_group": "Fruits",
+      "predicted_score": 65.33,
+      "pdcaas_score": 65.4,
+      "protein_content": 99.12,
+      "lim_aa": "Leucine",
+      "lim_aa_score": 36.64,
+      "egg_cosine": 0.98
+    },
+    {
+      "food": "Cabbage",
+      "food_group": "Vegetables",
+      "predicted_score": 65.32,
+      "pdcaas_score": 65.49,
+      "protein_content": 1.68,
+      "lim_aa": "Leucine",
+      "lim_aa_score": 41.36,
+      "egg_cosine": 0.98
+    },
+    {
+      "food": "cabbage",
+      "food_group": "Vegetables",
+      "predicted_score": 65.32,
+      "pdcaas_score": 65.49,
+      "protein_content": 1.68,
+      "lim_aa": "Leucine",
+      "lim_aa_score": 41.36,
+      "egg_cosine": 0.98
+    },
+    {
+      "food": "Cherries, sweet, raw",
+      "food_group": "Fruits",
+      "predicted_score": 65.28,
+      "pdcaas_score": 65.73,
+      "protein_content": 109.66,
+      "lim_aa": "Leucine",
+      "lim_aa_score": 43.74,
+      "egg_cosine": 0.99
+    },
+    {
+      "food": "Chia Seeds",
+      "food_group": "Nuts and Seeds",
+      "predicted_score": 65.25,
+      "pdcaas_score": 65.5,
+      "protein_content": 46.08,
+      "lim_aa": "Lysine",
+      "lim_aa_score": 46.78,
+      "egg_cosine": 0.99
+    },
+    {
+      "food": "Cabbage, red, raw",
+      "food_group": "Vegetables",
+      "predicted_score": 65.09,
+      "pdcaas_score": 65.13,
+      "protein_content": 131.99,
+      "lim_aa": "Leucine",
+      "lim_aa_score": 41.31,
+      "egg_cosine": 0.98
+    }
+  ],
+  "blends": {
+    "cross_category": {
+      "foods": [
+        {
+          "food": "Seeds Sesame Seeds Whole Dried",
+          "group": "Nuts and Seeds",
+          "grams": 60.0,
+          "percentage": 60.0,
+          "protein_content": 42.8
+        },
+        {
+          "food": "Lotus root, raw",
+          "group": "Vegetables",
+          "grams": 32.0,
+          "percentage": 32.0,
+          "protein_content": 108.2
+        },
+        {
+          "food": "Oranges, raw, Florida",
+          "group": "Fruits",
+          "grams": 2.0,
+          "percentage": 2.0,
+          "protein_content": 151.8
+        },
+        {
+          "food": "Soybeans, green, raw",
+          "group": "Vegetables",
+          "grams": 2.0,
+          "percentage": 2.0,
+          "protein_content": 192.1
+        },
+        {
+          "food": "Oranges, raw, all commercial varieties",
+          "group": "Fruits",
+          "grams": 2.0,
+          "percentage": 2.0,
+          "protein_content": 151.6
+        },
+        {
+          "food": "Oranges, raw, California, valencias",
+          "group": "Fruits",
+          "grams": 2.0,
+          "percentage": 2.0,
+          "protein_content": 152.7
+        }
+      ],
+      "mix_profile_per_food": {
+        "Histidine": 0.949,
+        "Isoleucine": 1.372,
+        "Leucine": 1.857,
+        "Lysine": 1.92,
+        "Methionine": 0.774,
+        "Phenylalanine": 1.43,
+        "Threonine": 1.245,
+        "Tryptophan": 0.562,
+        "Valine": 1.615
+      },
+      "mix_profile_per_protein": {
+        "Histidine": 1.29,
+        "Isoleucine": 1.87,
+        "Leucine": 2.53,
+        "Lysine": 2.62,
+        "Methionine": 1.06,
+        "Phenylalanine": 1.95,
+        "Threonine": 1.7,
+        "Tryptophan": 0.77,
+        "Valine": 2.2
+      },
+      "egg_reference": {
+        "Histidine": 2.2,
+        "Isoleucine": 5.4,
+        "Leucine": 8.6,
+        "Lysine": 7.0,
+        "Methionine": 3.4,
+        "Phenylalanine": 5.7,
+        "Threonine": 4.7,
+        "Tryptophan": 1.6,
+        "Valine": 6.6
+      },
+      "who_scores": {
+        "Histidine": 86.3,
+        "Isoleucine": 62.4,
+        "Leucine": 43.0,
+        "Lysine": 58.2,
+        "Methionine": 66.0,
+        "Phenylalanine": 51.4,
+        "Threonine": 73.9,
+        "Tryptophan": 100,
+        "Valine": 56.5
+      },
+      "egg_similarity_pct": 99.1,
+      "pdcaas_score": 66.4,
+      "total_protein_g": 73.3,
+      "total_grams": 100.0,
+      "meets_protein_target": "True"
+    },
+    "legumes_nuts": {
+      "foods": [
+        {
+          "food": "Chia Seeds",
+          "group": "Nuts and Seeds",
+          "grams": 60.0,
+          "percentage": 60.0,
+          "protein_content": 46.1
+        },
+        {
+          "food": "Dry Roasted Sunflower Seeds",
+          "group": "Nuts and Seeds",
+          "grams": 21.6,
+          "percentage": 21.6,
+          "protein_content": 45.7
+        },
+        {
+          "food": "Hemp Seeds",
+          "group": "Nuts and Seeds",
+          "grams": 14.4,
+          "percentage": 14.4,
+          "protein_content": 71.8
+        },
+        {
+          "food": "Seeds Sesame Seeds Whole Dried",
+          "group": "Nuts and Seeds",
+          "grams": 2.0,
+          "percentage": 2.0,
+          "protein_content": 42.8
+        },
+        {
+          "food": "Hazelnuts",
+          "group": "Nuts and Seeds",
+          "grams": 2.0,
+          "percentage": 2.0,
+          "protein_content": 29.6
+        }
+      ],
+      "mix_profile_per_food": {
+        "Histidine": 0.593,
+        "Isoleucine": 0.901,
+        "Leucine": 1.487,
+        "Lysine": 0.957,
+        "Methionine": 0.594,
+        "Phenylalanine": 1.065,
+        "Threonine": 0.803,
+        "Tryptophan": 0.39,
+        "Valine": 1.101
+      },
+      "mix_profile_per_protein": {
+        "Histidine": 1.2,
+        "Isoleucine": 1.83,
+        "Leucine": 3.01,
+        "Lysine": 1.94,
+        "Methionine": 1.2,
+        "Phenylalanine": 2.16,
+        "Threonine": 1.63,
+        "Tryptophan": 0.79,
+        "Valine": 2.23
+      },
+      "egg_reference": {
+        "Histidine": 2.2,
+        "Isoleucine": 5.4,
+        "Leucine": 8.6,
+        "Lysine": 7.0,
+        "Methionine": 3.4,
+        "Phenylalanine": 5.7,
+        "Threonine": 4.7,
+        "Tryptophan": 1.6,
+        "Valine": 6.6
+      },
+      "who_scores": {
+        "Histidine": 80.2,
+        "Isoleucine": 60.9,
+        "Leucine": 51.1,
+        "Lysine": 43.1,
+        "Methionine": 75.3,
+        "Phenylalanine": 56.8,
+        "Threonine": 70.8,
+        "Tryptophan": 100,
+        "Valine": 57.2
+      },
+      "egg_similarity_pct": 99.2,
+      "pdcaas_score": 66.2,
+      "total_protein_g": 49.3,
+      "total_grams": 100.0,
+      "meets_protein_target": "True"
+    },
+    "vegetables_seeds": {
+      "foods": [
+        {
+          "food": "Cabbage, raw",
+          "group": "Vegetables",
+          "grams": 60.0,
+          "percentage": 60.0,
+          "protein_content": 131.3
+        },
+        {
+          "food": "Cabbage",
+          "group": "Vegetables",
+          "grams": 13.6,
+          "percentage": 13.6,
+          "protein_content": 1.7
+        },
+        {
+          "food": "Lotus Root",
+          "group": "Vegetables",
+          "grams": 12.9,
+          "percentage": 12.9,
+          "protein_content": 2.8
+        },
+        {
+          "food": "Lotus root, raw",
+          "group": "Vegetables",
+          "grams": 11.5,
+          "percentage": 11.5,
+          "protein_content": 108.2
+        },
+        {
+          "food": "Soybeans, green, raw",
+          "group": "Vegetables",
+          "grams": 2.0,
+          "percentage": 2.0,
+          "protein_content": 192.1
+        }
+      ],
+      "mix_profile_per_food": {
+        "Histidine": 1.261,
+        "Isoleucine": 1.744,
+        "Leucine": 2.287,
+        "Lysine": 2.615,
+        "Methionine": 0.689,
+        "Phenylalanine": 1.808,
+        "Threonine": 1.957,
+        "Tryptophan": 0.632,
+        "Valine": 2.313
+      },
+      "mix_profile_per_protein": {
+        "Histidine": 1.32,
+        "Isoleucine": 1.82,
+        "Leucine": 2.39,
+        "Lysine": 2.73,
+        "Methionine": 0.72,
+        "Phenylalanine": 1.89,
+        "Threonine": 2.05,
+        "Tryptophan": 0.66,
+        "Valine": 2.42
+      },
+      "egg_reference": {
+        "Histidine": 2.2,
+        "Isoleucine": 5.4,
+        "Leucine": 8.6,
+        "Lysine": 7.0,
+        "Methionine": 3.4,
+        "Phenylalanine": 5.7,
+        "Threonine": 4.7,
+        "Tryptophan": 1.6,
+        "Valine": 6.6
+      },
+      "who_scores": {
+        "Histidine": 87.9,
+        "Isoleucine": 60.8,
+        "Leucine": 40.5,
+        "Lysine": 60.8,
+        "Methionine": 45.0,
+        "Phenylalanine": 49.8,
+        "Threonine": 88.9,
+        "Tryptophan": 94.4,
+        "Valine": 62.0
+      },
+      "egg_similarity_pct": 98.2,
+      "pdcaas_score": 65.6,
+      "total_protein_g": 95.7,
+      "total_grams": 100.0,
+      "meets_protein_target": "True"
+    },
+    "cereals_legumes": {
+      "foods": [
+        {
+          "food": "Wheat, durum",
+          "group": "Cereals",
+          "grams": 37.2,
+          "percentage": 37.2,
+          "protein_content": 25.8
+        },
+        {
+          "food": "Wheat, KAMUT khorasan",
+          "group": "Cereals",
+          "grams": 35.2,
+          "percentage": 35.2,
+          "protein_content": 25.9
+        },
+        {
+          "food": "Amaranth",
+          "group": "Cereals",
+          "grams": 23.6,
+          "percentage": 23.6,
+          "protein_content": 204.4
+        },
+        {
+          "food": "Wheat bran, crude",
+          "group": "Cereals",
+          "grams": 2.0,
+          "percentage": 2.0,
+          "protein_content": 29.9
+        },
+        {
+          "food": "Millet",
+          "group": "Cereals",
+          "grams": 2.0,
+          "percentage": 2.0,
+          "protein_content": 23.1
+        }
+      ],
+      "mix_profile_per_food": {
+        "Histidine": 0.861,
+        "Isoleucine": 1.231,
+        "Leucine": 1.977,
+        "Lysine": 1.642,
+        "Methionine": 0.734,
+        "Phenylalanine": 1.415,
+        "Threonine": 1.074,
+        "Tryptophan": 0.465,
+        "Valine": 1.471
+      },
+      "mix_profile_per_protein": {
+        "Histidine": 1.27,
+        "Isoleucine": 1.81,
+        "Leucine": 2.91,
+        "Lysine": 2.42,
+        "Methionine": 1.08,
+        "Phenylalanine": 2.08,
+        "Threonine": 1.58,
+        "Tryptophan": 0.68,
+        "Valine": 2.16
+      },
+      "egg_reference": {
+        "Histidine": 2.2,
+        "Isoleucine": 5.4,
+        "Leucine": 8.6,
+        "Lysine": 7.0,
+        "Methionine": 3.4,
+        "Phenylalanine": 5.7,
+        "Threonine": 4.7,
+        "Tryptophan": 1.6,
+        "Valine": 6.6
+      },
+      "who_scores": {
+        "Histidine": 84.5,
+        "Isoleucine": 60.4,
+        "Leucine": 49.3,
+        "Lysine": 53.7,
+        "Methionine": 67.6,
+        "Phenylalanine": 54.8,
+        "Threonine": 68.8,
+        "Tryptophan": 97.7,
+        "Valine": 55.5
+      },
+      "egg_similarity_pct": 99.5,
+      "pdcaas_score": 65.8,
+      "total_protein_g": 67.9,
+      "total_grams": 100.0,
+      "meets_protein_target": "True"
+    },
+    "consumer_friendly": {
+      "foods": [
+        {
+          "food": "Oranges, raw, California, valencias",
+          "group": "Fruits",
+          "grams": 60.0,
+          "percentage": 60.0,
+          "protein_content": 152.7
+        },
+        {
+          "food": "Oranges, raw, all commercial varieties",
+          "group": "Fruits",
+          "grams": 17.9,
+          "percentage": 17.9,
+          "protein_content": 151.6
+        },
+        {
+          "food": "Soybeans, green, raw",
+          "group": "Vegetables",
+          "grams": 16.7,
+          "percentage": 16.7,
+          "protein_content": 192.1
+        },
+        {
+          "food": "Oranges, raw, Florida",
+          "group": "Fruits",
+          "grams": 5.4,
+          "percentage": 5.4,
+          "protein_content": 151.8
+        }
+      ],
+      "mix_profile_per_food": {
+        "Histidine": 2.046,
+        "Isoleucine": 2.973,
+        "Leucine": 2.451,
+        "Lysine": 5.222,
+        "Methionine": 1.968,
+        "Phenylalanine": 3.485,
+        "Threonine": 2.017,
+        "Tryptophan": 1.005,
+        "Valine": 4.274
+      },
+      "mix_profile_per_protein": {
+        "Histidine": 1.29,
+        "Isoleucine": 1.87,
+        "Leucine": 1.54,
+        "Lysine": 3.28,
+        "Methionine": 1.24,
+        "Phenylalanine": 2.19,
+        "Threonine": 1.27,
+        "Tryptophan": 0.63,
+        "Valine": 2.69
+      },
+      "egg_reference": {
+        "Histidine": 2.2,
+        "Isoleucine": 5.4,
+        "Leucine": 8.6,
+        "Lysine": 7.0,
+        "Methionine": 3.4,
+        "Phenylalanine": 5.7,
+        "Threonine": 4.7,
+        "Tryptophan": 1.6,
+        "Valine": 6.6
+      },
+      "who_scores": {
+        "Histidine": 85.8,
+        "Isoleucine": 62.3,
+        "Leucine": 26.1,
+        "Lysine": 73.0,
+        "Methionine": 77.4,
+        "Phenylalanine": 57.7,
+        "Threonine": 55.2,
+        "Tryptophan": 90.3,
+        "Valine": 68.9
+      },
+      "egg_similarity_pct": 94.8,
+      "pdcaas_score": 66.3,
+      "total_protein_g": 159.0,
+      "total_grams": 100.0,
+      "meets_protein_target": "True"
+    }
+  },
+  "group_distribution": {
+    "Vegetables": 225,
+    "Fruits": 58,
+    "Legumes": 56,
+    "Nuts and Seeds": 54,
+    "Cereals": 33
+  }
+}
