@@ -14,3 +14,4 @@ build/
 extra_files/
 extra_data/
 .specstory/
+model_cache.joblib

@@ -22,6 +22,7 @@ from sklearn.metrics import r2_score, mean_squared_error
 from sklearn.linear_model import Ridge
 from functools import lru_cache
 import time
+import joblib
 
 warnings.filterwarnings('ignore')
 
@@ -920,7 +921,10 @@ def train_pipeline(base_filepath, extra_filepaths=None):
     PIVOT_temp.insert(0, 'food_id', ['F{:04d}'.format(i+1) for i in range(len(PIVOT_temp))])
     
     MODEL, SCALER, PIVOT = model, scaler, PIVOT_temp
-    
+
+    joblib.dump({'model': MODEL, 'scaler': SCALER, 'pivot': PIVOT}, 'model_cache.joblib')
+    print("  ✓ Model saved to model_cache.joblib")
+
     METRICS = {
         'r2': round(float(r2), 3),
         'r2_cv_mean': round(float(cv_scores.mean()), 3),
@@ -1937,7 +1941,14 @@ def predict_food():
 
 # ── STARTUP ───────────────────────────────────────────────────────────────────
 def _background_train():
-    import threading
+    global MODEL, SCALER, PIVOT, METRICS
+    if os.path.exists('model_cache.joblib'):
+        print("Loading model from cache...")
+        cache = joblib.load('model_cache.joblib')
+        MODEL, SCALER, PIVOT = cache['model'], cache['scaler'], cache['pivot']
+        METRICS = {'loaded_from_cache': True, 'total_foods': len(PIVOT)}
+        print("Model loaded from cache — ready instantly.")
+        return
     if os.path.exists('extra_data'):
         saved = [os.path.join('extra_data', f) for f in os.listdir('extra_data') if f.endswith(('.xlsx', '.xls'))]
         EXTRA_FILES.extend(saved)
