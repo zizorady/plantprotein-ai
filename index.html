@@ -1033,7 +1033,7 @@ async function retrain(){
   const b=document.querySelector('.retrain-btn');
   b.innerHTML='<span class="spin"></span> Training...';b.disabled=true;
   try{
-    const r=await fetch(`${API}/train`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({file:'merged.xlsx'})});
+    const r=await fetch(`${API}/train`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({file:'combined_dataset.xlsx'})});
     const d=await r.json();
     if(d.success){
       rc={};
@@ -1160,13 +1160,10 @@ function renderBlends(blends){
     if (realSimValue === null || realSimValue === undefined || isNaN(realSimValue)) {
       displaySimValue = "N/A";
     } else {
-      // Cap ONLY for display at 95.9%
-      const capped = Math.min(realSimValue, 95.9);
-      displaySimValue = capped.toFixed(1) + "%";
+      displaySimValue = realSimValue.toFixed(1) + "%";
     }
 
     let displayDesc = blend.description || '';
-    displayDesc = displayDesc.replace(/Synergizes[^.]*mathematically\.?/gi, "The optimized blend partially corrects sulfur amino acid limitation (Methionine), improving overall protein quality.");
 
     let pdcaasValue = blend.pdcaas_estimate ?? null;
     let pdcaasDisplay;
@@ -1191,20 +1188,27 @@ function renderBlends(blends){
         <td style="color:${categoryColor}">${food.category || 'Unknown'}</td>
         <td><span class="pct-v">${food.percentage || 0}%</span><span class="pct-bar-wrap"><span class="pct-bar" style="width:${food.percentage || 0}%;background:${categoryColor}"></span></span></td>
         <td class="g-v">${food.grams || 0}g</td>
-        <td><span class="pbadge" style="background:${proteinColor}20; color:${proteinColor}">${food.protein_content || 0}g prot</span></td>
+        <td><span class="pbadge" style="background:${proteinColor}20; color:${proteinColor}" title="Protein content of this food per 100g of that food (not the blend)">${food.protein_content || 0}g/100g</span></td>
       </tr>`;
     }).join('');
     
     // Build amino acid comparison rows
+    // Color logic: green = FAO adult requirement met (nutritionally complete, no limiting AA)
+    //              orange = below FAO adult requirement (true limiting AA)
+    //              The egg match % is shown for reference but does NOT determine color.
     const aaRows = AAS.map(aa => {
       const comp = blend.aa_comparison ? blend.aa_comparison[aa] : null;
       if (!comp) return '';
       const barWidth = Math.min(comp.ratio_pct || 0, 100);
+      const faoMet = comp.fao_met !== undefined ? comp.fao_met : (barWidth >= 80);
+      const barColor = faoMet ? '#10b981' : '#ef4444';
+      const labelClass = faoMet ? 'good' : 'low';
+      const faoLabel = faoMet ? '' : ` <span style="color:#ef4444;font-size:0.7em;font-weight:700">LIMITING</span>`;
       return `<tr>
-        <td>${aa}</td>
+        <td>${aa}${faoLabel}</td>
         <td>${comp.blend_per100g_protein || 0}</td>
         <td>${comp.egg_per100g_protein || 0}</td>
-        <td><div class="rb"><div class="rf" style="width:${barWidth}px; background:${barWidth >= 80 ? '#10b981' : '#f59e0b'}"></div><span class="rp ${barWidth >= 80 ? 'good' : 'low'}">${comp.ratio_pct || 0}%</span></div></td>
+        <td><div class="rb"><div class="rf" style="width:${barWidth}px; background:${barColor}"></div><span class="rp ${labelClass}">${comp.ratio_pct || 0}%</span></div></td>
       </tr>`;
     }).join('');
     
@@ -1270,7 +1274,7 @@ function renderBlends(blends){
           </thead>
           <tbody>${aaRows}</tbody>
         </table>
-        <div class="unit-note">* Values normalized to g / 100g protein (FAO standard) · Proposal p.4</div>
+        <div class="unit-note">* Values normalized to g / 100g protein (FAO standard) · Proposal p.4 &nbsp;·&nbsp; <span style="color:#10b981;font-weight:600">Green = FAO adult requirement met</span> &nbsp;·&nbsp; <span style="color:#ef4444;font-weight:600">Red = limiting amino acid</span> &nbsp;·&nbsp; Match % shown vs egg reference</div>
       </div>
     </div>`;
   }).join('');

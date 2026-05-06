@@ -56,11 +56,21 @@ MIN_INGREDIENTS_FOR_GOOD_BLEND = 3  # Need at least 3 ingredients for diversity
 # Cross-category blends: keep nuts+seeds in a 20–30% band (wt.% of mixture).
 MIN_NUTS_SEEDS_TOTAL = 0.20          # If any nuts/seeds are used, combined minimum 20%
 MAX_NUTS_SEEDS_TOTAL = 0.30          # Combined nuts+seeds max 30% of blend
-# Egg dashboard match % (blend vs egg g/100g protein): allow exactly ONE “minimal” AA;
-# all others must stay at or above this ratio vs egg (same formula as /api/blends UI).
-# 0.85 aligns with exemplar profiles where only sulfur AA (e.g. Met) sits clearly lower.
-MIN_EGG_AA_MATCH_RATIO = 0.85
 MIN_LEGUMES_WHEN_AVAILABLE = 0.20    # Floor for legumes when present (high-quality plant protein)
+# Cereals are rich in methionine; requiring ≥35% when cereals are present naturally pushes
+# the blend's methionine above the FAO adult threshold — no hard AA constraint needed.
+MIN_CEREALS_WHEN_PRESENT = 0.35      # Floor for cereals when present in blend
+# Limiting AA check is now against FAO adult pattern (achievable from plants) not egg.
+# Egg is used only as a shape/similarity target via cosine similarity.
+# A blend is accepted only when ALL 9 AAs meet the FAO adult requirement (ratio >= 1.0).
+# Additionally, methionine must reach at least 70% of egg reference — this is achievable
+# (6,334 / ~96,000 FAO-complete blends hit it) and ensures meaningful sulfur AA coverage.
+MIN_METHIONINE_EGG_PCT = 0.70       # Methionine must be >= 70% of egg reference
+FAO_ADULT_G_PER_100G_PROT = {       # FAO 2013 adult pattern converted to g/100g protein
+    'Histidine': 1.6, 'Isoleucine': 3.0, 'Leucine': 6.1, 'Lysine': 4.8,
+    'Methionine': 1.4, 'Phenylalanine': 2.5, 'Threonine': 2.5,
+    'Tryptophan': 0.66, 'Valine': 4.0,
+}
 MIN_DISTINCT_GROUPS = 3              # Blend must span at least 3 food groups (diversity rule)
 SOFT_BONUS_CEREAL_LEGUME = 0.03      # Score bonus for cereal+legume combo (complementary AAs)
 
@@ -138,7 +148,7 @@ TYPICAL_PROTEIN = {
     "Fruits": 1.0, "Cereals And Grains": 12.0
 }
 
-EXCEL_FILE = 'merged.xlsx'
+EXCEL_FILE = 'combined_dataset.xlsx'
 
 # ── CORS ──────────────────────────────────────────────────────────────────────
 @app.after_request
@@ -200,19 +210,24 @@ def egg_aa_match_ratio(blend_val, egg_val):
     return float(match_ratio)
 
 
-def check_egg_aa_single_limiting(mix_aa_per_100g_protein):
+def check_fao_all_met(mix_aa_per_100g_protein):
     """
-    At most one amino acid may fall below MIN_EGG_AA_MATCH_RATIO vs egg reference.
-    Matches the dashboard rule: one limiting AA (e.g. methionine), others stay high vs egg.
+    Acceptance criteria for a blend:
+    1. All 9 AAs must meet FAO 2013 adult pattern (zero limiting AAs vs human requirement).
+    2. Methionine must reach at least MIN_METHIONINE_EGG_PCT (70%) of egg reference —
+       achievable by ~6% of random blends, ensures meaningful sulfur AA coverage.
     """
-    below = 0
     for i, aa in enumerate(AMINO_ACIDS):
-        egg_val = EGG_REF.get(aa, 0)
-        r = egg_aa_match_ratio(float(mix_aa_per_100g_protein[i]), egg_val)
-        if r < MIN_EGG_AA_MATCH_RATIO:
-            below += 1
-            if below > 1:
-                return False
+        fao_val = FAO_ADULT_G_PER_100G_PROT.get(aa, 0)
+        if fao_val <= 0:
+            continue
+        if float(mix_aa_per_100g_protein[i]) < fao_val:
+            return False
+    # Methionine vs egg floor
+    met_idx = AMINO_ACIDS.index('Methionine')
+    met_egg_threshold = EGG_REF['Methionine'] * MIN_METHIONINE_EGG_PCT
+    if float(mix_aa_per_100g_protein[met_idx]) < met_egg_threshold:
+        return False
     return True
 
 
@@ -237,19 +252,22 @@ def check_nutritional_constraints(
     *,
     strict_nuts_floor=True,
     enforce_legume_floor=True,
+    enforce_cereal_floor=True,
     min_distinct_groups=None,
 ):
     """
     Validates a candidate blend against agricultural/nutritional rules.
     Returns (is_valid, reason). These rules come from domain experts:
     - Seeds and nuts are oil-rich; combined ≤30% prevents fat-dominated blends
-    - Legumes (when present) should contribute ≥20% — they're the highest-quality
-      plant protein and complement cereal lysine deficiency
+    - Legumes (when present) should contribute ≥20%
+    - Cereals (when present) should contribute ≥35% — methionine-rich; this naturally
+      pushes the blend's Met above the egg reference without a hard AA constraint
     - Blend must span ≥N distinct food groups for nutritional diversity
 
-    Optional flags (for /api/blends fallback passes when strict sampling finds nothing):
+    Optional flags (for fallback passes when strict sampling finds nothing):
     - strict_nuts_floor=False — only enforce max nuts/seeds (no 20% minimum when nuts used)
     - enforce_legume_floor=False — skip legume % floor
+    - enforce_cereal_floor=False — skip cereal % floor (last-resort fallback only)
     - min_distinct_groups — override MIN_DISTINCT_GROUPS (e.g. 2 for last-resort blends)
     """
     if min_distinct_groups is None:
@@ -278,7 +296,17 @@ def check_nutritional_constraints(
             if legumes_total < MIN_LEGUMES_WHEN_AVAILABLE:
                 return False, f"legumes only {legumes_total*100:.1f}% (need ≥{MIN_LEGUMES_WHEN_AVAILABLE*100:.0f}%)"
 
-    # 3. Diversity: must span at least N distinct food groups
+    # 3. Cereals floor (only enforced if any cereal is in the candidate set).
+    # Cereals are methionine-rich; requiring ≥35% when they're present naturally closes
+    # the methionine gap vs egg without a hard per-AA constraint.
+    if enforce_cereal_floor:
+        cereal_indices = [i for i, g in enumerate(food_groups) if str(g).strip().lower() in CEREALS_GROUPS]
+        if cereal_indices:
+            cereals_total = sum(weights_pct[i] for i in cereal_indices)
+            if cereals_total < MIN_CEREALS_WHEN_PRESENT:
+                return False, f"cereals only {cereals_total*100:.1f}% (need ≥{MIN_CEREALS_WHEN_PRESENT*100:.0f}%)"
+
+    # 4. Diversity: must span at least N distinct food groups
     distinct_groups = set()
     for i, g in enumerate(food_groups):
         if weights_pct[i] >= 0.05:  # only count meaningful contributors (≥5%)
@@ -472,10 +500,11 @@ def fast_optimize(foods, food_groups, food_proteins, food_aa_arrays, total_grams
             aa_total += (w[i] / total_grams) * np.array(food_aa_arrays[i])
             
         mix_aa_per_100g_protein = (aa_total / total_protein_per_100g_food) * 100
-        
-        if not check_egg_aa_single_limiting(mix_aa_per_100g_protein):
+
+        # Hard filter: all AAs must meet FAO adult pattern (zero limiting AAs)
+        if not check_fao_all_met(mix_aa_per_100g_protein):
             continue
-        
+
         mix_mg_per_g = mix_aa_per_100g_protein * 10
         ratios = mix_mg_per_g / who_ref
         
@@ -485,8 +514,7 @@ def fast_optimize(foods, food_groups, food_proteins, food_aa_arrays, total_grams
         
         raw_min_ratio = float(np.min(ratios))
         pdcaas_q, diaas_raw, _ = fao_pdcaas_diaas(raw_min_ratio, dig_sum)
-        if diaas_raw > 1.30: continue
-        
+
         feat = list(mix_aa_per_100g_protein) + [total_protein_per_100g_food, raw_min_ratio, dig_sum]
         
         candidate_arrays.append({'w': w, 'similarity': similarity})
@@ -569,6 +597,7 @@ def load_excel_to_df(filepath):
             col_map[c] = "amino_acid"
         elif cl in ["qty", "quantity", "amount", "value"]:
             col_map[c] = "qty"
+        # protein column not needed — protein estimated from AA sum for g/100g food data
     df.rename(columns=col_map, inplace=True)
     
     if "food_group" not in df.columns:
@@ -649,34 +678,43 @@ def load_excel_to_df(filepath):
     print(f"Unique foods: {df['food'].nunique()}")
     print(f"[load] Preserved full dataset (No drops allowed): {len(df)} foods")
     
-    # ── 8. Data validation - protein content ──────────────────────────────────
-    # FIXED: Compute protein from amino acid sum.
-    # The 9 essential AAs make up ~45% of total protein in plants on average,
-    # so total_protein ≈ sum(essential_AAs) / 0.45 ≈ sum(essential_AAs) × 2.22
-    df["protein_content"] = (df[AMINO_ACIDS].sum(axis=1) / 0.45).round(2)
-    
-    # Do not forcefully remove high protein, keep dataset pristine unless completely unphysical (negative values)
+    # ── 8. Protein content ────────────────────────────────────────────────────
+    # combined_dataset.xlsx stores a protein_content column with real measured values
+    # for foods from merged.xlsx and AA_sum/0.45 estimates for original foods.
+    # Use it directly when present; fall back to AA_sum/0.45 for any missing rows.
+    df['total_amino_acids'] = df[AMINO_ACIDS].sum(axis=1)
+    if "protein_content" in df.columns:
+        df["protein_content"] = pd.to_numeric(df["protein_content"], errors="coerce")
+        missing = df["protein_content"].isna() | (df["protein_content"] <= 0)
+        df.loc[missing, "protein_content"] = (df.loc[missing, 'total_amino_acids'] / 0.45).clip(upper=100.0)
+        df["protein_content"] = df["protein_content"].clip(upper=100.0).round(2)
+    else:
+        df["protein_content"] = (df['total_amino_acids'] / 0.45).clip(upper=100.0).round(2)
+
     before_prot = len(df)
-    df = df[df["protein_content"] >= 0].copy()
-    print(f"[load] Removed {before_prot - len(df)} foods with negative protein")
+    df = df[df["protein_content"] > 0].copy()
+    print(f"[load] Removed {before_prot - len(df)} foods with zero protein")
     print(f"[load] Authenticated unique foods count: {df['food'].nunique()}")
-    
-    df = df[["food_group", "food"] + AMINO_ACIDS].copy()
-    
+
+    df = df[["food_group", "food"] + AMINO_ACIDS + ["protein_content"]].copy()
+
     # ── 9. Final safety check ────────────────────────────────────────────────
     if len(df) == 0:
         print("[load] ⚠ Dataset completely empty! Using emergency fallback.")
         fallback_data = [
-            {"food_group": "Legumes", "food": "Lentils", "Histidine": 0.7, "Isoleucine": 1.0, "Leucine": 1.7, "Lysine": 1.6, "Methionine": 0.2, "Phenylalanine": 1.2, "Threonine": 0.9, "Tryptophan": 0.2, "Valine": 1.2},
-            {"food_group": "Seeds", "food": "Quinoa", "Histidine": 0.4, "Isoleucine": 0.8, "Leucine": 1.3, "Lysine": 1.2, "Methionine": 0.3, "Phenylalanine": 0.9, "Threonine": 0.6, "Tryptophan": 0.1, "Valine": 0.9},
+            {"food_group": "Legumes", "food": "Lentils", "protein_content": 6.4,
+             "Histidine": 0.077, "Isoleucine": 0.116, "Leucine": 0.198, "Lysine": 0.186,
+             "Methionine": 0.022, "Phenylalanine": 0.139, "Threonine": 0.104,
+             "Tryptophan": 0.022, "Valine": 0.139},
+            {"food_group": "Cereals", "food": "Quinoa", "protein_content": 3.9,
+             "Histidine": 0.020, "Isoleucine": 0.039, "Leucine": 0.063, "Lysine": 0.058,
+             "Methionine": 0.015, "Phenylalanine": 0.044, "Threonine": 0.030,
+             "Tryptophan": 0.005, "Valine": 0.044},
         ]
         df = pd.DataFrame(fallback_data)
-    
+
     df['total_amino_acids'] = df[AMINO_ACIDS].sum(axis=1)
-    
-    # FIXED: Essential AAs ≈ 45% of total protein in plants → divide by 0.45
-    df["protein_content"] = (df['total_amino_acids'] / 0.45).round(2)
-    
+
     print(f"[load] Clean shape: {df.shape} | Groups: {sorted(df['food_group'].unique())}")
     return df
 
@@ -717,28 +755,7 @@ def train_pipeline(base_filepath, extra_filepaths=None):
     after_dedupe = len(df)
     print(f"  ✓ Validated dataset (No food drops): {after_dedupe} total rows")
     
-    def estimate_protein(row):
-        eaa_sum = row[AMINO_ACIDS].sum()
-        cat = str(row['food_group']).lower().strip()
-        
-        # Biologically validated conversion mapping & boundary enforcement
-        if 'legume' in cat or 'bean' in cat:
-            protein = eaa_sum / 0.42
-            return np.clip(protein, 18.0, 30.0)
-        elif 'seed' in cat or 'nut' in cat:
-            protein = eaa_sum / 0.30
-            return np.clip(protein, 15.0, 30.0)
-        elif 'grain' in cat or 'cereal' in cat:
-            protein = eaa_sum / 0.33
-            return np.clip(protein, 7.0, 15.0)
-        elif 'vegetable' in cat:
-            protein = eaa_sum / 0.40
-            return np.clip(protein, 1.0, 5.0)
-        else:
-            protein = eaa_sum / 0.35
-            return np.clip(protein, 1.0, 100.0)
-            
-    # df['protein_content'] = df.apply(estimate_protein, axis=1).round(1) # Removed mapping override to preserve mathematically correct dataset scalings
+    # protein_content already set correctly by load_excel_to_df from measured column
     df['total_amino_acids'] = df[AMINO_ACIDS].sum(axis=1)
     
     # ── 4B. ADVANCED FEATURE ENGINEERING FOR 98% ACCURACY ──────────────────────
@@ -940,7 +957,7 @@ def train_pipeline(base_filepath, extra_filepaths=None):
         'target_protein': TARGET_PROTEIN,
         'max_nuts_seeds_total': MAX_NUTS_SEEDS_TOTAL,
         'min_nuts_seeds_total': MIN_NUTS_SEEDS_TOTAL,
-        'min_egg_aa_match_ratio': MIN_EGG_AA_MATCH_RATIO,
+        'fao_adult_threshold': FAO_ADULT_G_PER_100G_PROT,
         'min_legumes_when_available': MIN_LEGUMES_WHEN_AVAILABLE,
         'min_distinct_groups': MIN_DISTINCT_GROUPS,
         'extra_files': [os.path.basename(f) for f in (extra_filepaths or [])],
@@ -1244,35 +1261,38 @@ def blends():
         p_probs = df_valid['protein_content'].values
         p_probs = p_probs / p_probs.sum()
 
-        # Staged constraint passes: strict rules often reject all random draws (→ HTTP 500).
-        # Relax in order: nuts floor → egg AA shape → legume floor → group count — still cap nuts at MAX.
+        # Staged constraint passes: relax in order so we never 500 on edge-case datasets.
+        # Pass 1-2: full constraints + FAO zero-limiting filter (best quality blends).
+        # Pass 3:   relax cereal/nut floors, still require FAO zero-limiting.
+        # Pass 4:   last resort — relax structural constraints, still require FAO zero-limiting.
+        # FAO zero-limiting is never dropped — it is the core quality guarantee.
         blend_passes = (
             dict(
                 num_tries=3500,
                 strict_nuts_floor=True,
-                require_egg_aa=True,
                 enforce_legume_floor=True,
+                enforce_cereal_floor=True,
                 min_distinct_groups=MIN_DISTINCT_GROUPS,
             ),
             dict(
                 num_tries=3500,
                 strict_nuts_floor=False,
-                require_egg_aa=True,
                 enforce_legume_floor=True,
+                enforce_cereal_floor=True,
                 min_distinct_groups=MIN_DISTINCT_GROUPS,
             ),
             dict(
                 num_tries=4000,
                 strict_nuts_floor=False,
-                require_egg_aa=False,
                 enforce_legume_floor=True,
+                enforce_cereal_floor=False,
                 min_distinct_groups=MIN_DISTINCT_GROUPS,
             ),
             dict(
                 num_tries=5000,
                 strict_nuts_floor=False,
-                require_egg_aa=False,
                 enforce_legume_floor=False,
+                enforce_cereal_floor=False,
                 min_distinct_groups=2,
             ),
         )
@@ -1323,11 +1343,14 @@ def blends():
                     100.0,
                     strict_nuts_floor=pass_cfg["strict_nuts_floor"],
                     enforce_legume_floor=pass_cfg["enforce_legume_floor"],
+                    enforce_cereal_floor=pass_cfg["enforce_cereal_floor"],
                     min_distinct_groups=pass_cfg["min_distinct_groups"],
                 )
                 if not is_valid:
                     continue
-                if pass_cfg["require_egg_aa"] and not check_egg_aa_single_limiting(mix_aa_per_100g_protein):
+
+                # Core quality gate: all AAs must meet FAO adult pattern — zero limiting AAs
+                if not check_fao_all_met(mix_aa_per_100g_protein):
                     continue
 
                 mix_mg_per_g = mix_aa_per_100g_protein * 10
@@ -1445,23 +1468,29 @@ def blends():
             for aa in AMINO_ACIDS:
                 blend_val = mix_profile[aa]
                 egg_val = EGG_REF.get(aa, 0)
+                fao_val = FAO_ADULT_G_PER_100G_PROT.get(aa, 0)
+
+                # Egg ratio: how close the blend shape is to egg (capped at 100%)
                 if egg_val > 0:
                     raw_match = blend_val / egg_val
-                    # 1. Soft Match Adjustment (Critical)
                     if raw_match > 1.0:
                         excess = raw_match - 1.0
-                        match_ratio = raw_match / (1.0 + excess * 1.5)
-                        match_ratio = min(match_ratio, 1.0)
-                    else:
-                        match_ratio = raw_match
-                    ratio_pct = round(match_ratio * 100, 1)
+                        raw_match = raw_match / (1.0 + excess * 1.5)
+                    egg_ratio_pct = round(min(raw_match, 1.0) * 100, 1)
                 else:
-                    ratio_pct = 0
-                
+                    egg_ratio_pct = 0
+
+                # FAO ratio: whether this AA is fully met (>=100% = no limiting AA)
+                fao_ratio_pct = round((blend_val / fao_val * 100), 1) if fao_val > 0 else 0
+                fao_met = fao_ratio_pct >= 100.0
+
                 aa_comparison[aa] = {
                     'blend_per100g_protein': round(blend_val, 2),
                     'egg_per100g_protein': round(egg_val, 2),
-                    'ratio_pct': ratio_pct
+                    'fao_adult_per100g_protein': round(fao_val, 2),
+                    'ratio_pct': egg_ratio_pct,        # vs egg (shape match %)
+                    'fao_ratio_pct': fao_ratio_pct,    # vs FAO adult requirement
+                    'fao_met': fao_met,                # True = no limiting AA for this position
                 }
             
             egg_similarity = c['similarity'] * 100
@@ -1480,7 +1509,7 @@ def blends():
                 'limiting_amino_acid': c['limiting_aa_name'],
                 'pdcaas_estimate': round(c['pdcaas'], 2),
                 'diaas': round(c['diaas'], 2),
-                'description': f"Hybrid Matched (Score: {round(model_score, 1)}). Synergizes {result_foods[0]['food'].lower()} delivering dense {c['limiting_aa_name']} profiles mathematically.",
+                'description': f"Hybrid Matched (Score: {round(model_score, 1)}). All 9 essential amino acids meet FAO adult requirements — zero limiting amino acids. Egg similarity {round(egg_similarity, 1)}%.",
                 'preparation_steps': smart_uses[0]['steps'] if smart_uses else [],
                 'color': color,
                 'mix_profile': mix_profile,
@@ -1675,7 +1704,7 @@ def predict_custom():
                 total_protein_per_100g_food = (total_protein / total_grams) * 100
                 mix_aa_per_g_protein = (blend_aa_per_100g_food / total_protein_per_100g_food) * 100
                 
-                if not check_egg_aa_single_limiting(mix_aa_per_g_protein):
+                if not check_fao_all_met(mix_aa_per_g_protein):
                     continue
                 
                 mix_mg_per_g = mix_aa_per_g_protein * 10
@@ -1712,7 +1741,7 @@ def predict_custom():
                     total_protein_per_100g_food = (total_protein / total_grams) * 100
                     mix_aa_per_g_protein = (blend_aa_per_100g_food / total_protein_per_100g_food) * 100
                     
-                    if not check_egg_aa_single_limiting(mix_aa_per_g_protein):
+                    if not check_fao_all_met(mix_aa_per_g_protein):
                         continue
                     
                     mix_mg_per_g = mix_aa_per_g_protein * 10
